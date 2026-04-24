@@ -1,0 +1,218 @@
+version: 2
+
+models:
+  # ---------------------------------------------------------------------------
+  # stg_fred_ppi — FRED Producer Price Index
+  # GE source: validate_macroeconomic() in 4.ge_checkpoint.py (lines 37-97)
+  # ---------------------------------------------------------------------------
+  - name: stg_fred_ppi
+    description: "Staged FRED PPI data — monthly commodity price indices per ingredient_id."
+    columns:
+      - name: ingredient_id
+        description: "FK to fred_mapping — identifies the commodity"
+        data_tests:
+          - not_null
+      - name: ppi
+        description: "Producer Price Index value (float, non-zero)"
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "!= 0.0"
+      - name: ppi_date
+        description: "Observation date (YYYY-MM-DD)"
+        data_tests:
+          - not_null
+      - name: ppi_frequency
+        description: "Reporting frequency (e.g. monthly, annual)"
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - ingredient_id
+              - ppi_date
+
+  # ---------------------------------------------------------------------------
+  # stg_dollar_index — Trade-Weighted US Dollar Index
+  # GE source: validate_dollar_index() in 4.ge_checkpoint.py (lines 150-204)
+  # ---------------------------------------------------------------------------
+  - name: stg_dollar_index
+    description: "Staged dollar index data — daily trade-weighted US dollar index (DTWEXBGS)."
+    columns:
+      - name: fred_series_id
+        description: "Always DTWEXBGS"
+        data_tests:
+          - not_null
+      - name: name
+        description: "Always dollar_index"
+        data_tests:
+          - not_null
+      - name: ppi
+        description: "Dollar index value (float, non-zero)"
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "!= 0.0"
+      - name: ppi_date
+        description: "Observation date (YYYY-MM-DD)"
+        data_tests:
+          - not_null
+      - name: ppi_frequency
+        description: "Always daily"
+        data_tests:
+          - not_null
+
+  # ---------------------------------------------------------------------------
+  # stg_ams_market — USDA AMS Market Reports
+  # GE source: validate_market_and_logistic() in 4.ge_checkpoint.py (lines 258-300)
+  # ---------------------------------------------------------------------------
+  - name: stg_ams_market
+    description: "Staged AMS market reports — daily/weekly grain bid data from 29 state/regional slugs."
+    columns:
+      - name: slug_id
+        description: "AMS report slug identifier"
+        data_tests:
+          - not_null
+      - name: report_title
+        description: "Report name (uppercased)"
+        data_tests:
+          - no_lowercase
+      - name: ams_ingredient_name
+        description: "Normalized commodity name (uppercased, singularized)"
+        data_tests:
+          - not_null
+          - no_lowercase
+      - name: ams_ingredient_group
+        description: "Commodity category (uppercased)"
+        data_tests:
+          - no_lowercase
+      - name: ams_ingredient_grade
+        description: "USDA grade (uppercased)"
+        data_tests:
+          - no_lowercase
+      - name: price_min
+        description: "Minimum bid price (float, NULLs allowed)"
+      - name: price_max
+        description: "Maximum bid price (float, NULLs allowed)"
+      - name: price_avg
+        description: "Average bid price (float, NULLs allowed)"
+      - name: price_unit
+        description: "Price denomination (uppercased)"
+        data_tests:
+          - no_lowercase
+      - name: sale_type
+        description: "Sale type (uppercased)"
+        data_tests:
+          - no_lowercase
+      - name: delivery_point
+        description: "Delivery location type (uppercased)"
+        data_tests:
+          - no_lowercase
+      - name: freight
+        description: "Freight terms (uppercased)"
+        data_tests:
+          - no_lowercase
+      - name: trans_mode
+        description: "Transportation mode (uppercased)"
+        data_tests:
+          - no_lowercase
+      - name: market_location_state
+        description: "State abbreviation (uppercased)"
+        data_tests:
+          - no_lowercase
+      - name: report_date
+        description: "Report date (YYYY-MM-DD)"
+        data_tests:
+          - not_null
+
+  # ---------------------------------------------------------------------------
+  # stg_nass_production — USDA NASS Crop Survey
+  # GE source: validate_nass() in 4.ge_checkpoint.py (lines 342-383)
+  # ---------------------------------------------------------------------------
+  - name: stg_nass_production
+    description: "Staged NASS crop data — yield, production, stocks, and acreage from 1972 onward."
+    columns:
+      - name: ingredient_name
+        description: "Commodity class name (uppercased)"
+        data_tests:
+          - not_null
+          - no_lowercase
+      - name: unit_of_measure
+        description: "Unit of measure (uppercased)"
+        data_tests:
+          - not_null
+          - no_lowercase
+      - name: amount
+        description: "Reported value (float)"
+        data_tests:
+          - not_null
+      - name: cv_pct
+        description: "Coefficient of variation"
+      - name: year
+        description: "Reporting year"
+      - name: frequency
+        description: "Frequency (e.g. ANNUAL, POINT IN TIME)"
+        data_tests:
+          - no_lowercase
+      - name: range
+        description: "Reference period (uppercased)"
+        data_tests:
+          - no_lowercase
+      - name: load_time
+        description: "NASS load date (YYYY-MM-DD)"
+        data_tests:
+          - not_null
+      - name: state
+        description: "US state abbreviation (uppercased)"
+        data_tests:
+          - no_lowercase
+      - name: country
+        description: "Country name (uppercased)"
+        data_tests:
+          - no_lowercase
+
+  # ---------------------------------------------------------------------------
+  # stg_fred_mapping — Ingredient-to-FRED-Series Reference
+  # GE source: validate_fred_mapping() in 4.ge_checkpoint.py (lines 423-456)
+  # ---------------------------------------------------------------------------
+  - name: stg_fred_mapping
+    description: "Reference table mapping ingredient_id to FRED PPI series_id."
+    columns:
+      - name: ingredient_id
+        description: "Unique commodity identifier"
+        data_tests:
+          - not_null
+          - unique
+      - name: ingredient_group
+        description: "Top-level commodity grouping"
+      - name: ingredient_description
+        description: "Detailed commodity description"
+      - name: ingredient_name
+        description: "Normalized commodity name"
+      - name: unit_of_measure
+        description: "Standardized unit"
+      - name: fred_series_id
+        description: "FRED PPI series identifier (NULL if no PPI available)"
+
+  # ---------------------------------------------------------------------------
+  # stg_product_master — Commodity Reference Table
+  # ---------------------------------------------------------------------------
+  - name: stg_product_master
+    description: "Normalized commodity reference table — maps ingredient_id to names and units."
+    columns:
+      - name: ingredient_id
+        description: "Unique commodity identifier (starts at 10001)"
+        data_tests:
+          - not_null
+          - unique
+      - name: ingredient_group
+        description: "Top-level grouping (e.g. FIELD CROPS)"
+      - name: ingredient_description
+        description: "Detailed commodity description"
+      - name: ingredient_name
+        description: "Normalized commodity name"
+      - name: unit_of_measure
+        description: "Standardized unit (e.g. LB, BU, TON)"

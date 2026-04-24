@@ -1,0 +1,69 @@
+# Great Expectations — Pre-Ingestion Validation Only
+#
+# Post-ingestion validation (staged data quality) has moved to dbt tests.
+# GE is now scoped to validate API response quality BEFORE writing to data/raw/.
+#
+# See: dbt_pipeline/models/staging/_stg_models.yml for post-ingestion tests.
+
+config_version: 4.0
+
+config_variables_file_path: uncommitted/config_variables.yml
+
+plugins_directory: plugins/
+
+stores:
+  expectations_store:
+    class_name: ExpectationsStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: expectations/
+
+  validation_results_store:
+    class_name: ValidationResultsStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: uncommitted/validations/
+
+  checkpoint_store:
+    class_name: CheckpointStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      suppress_store_backend_id: true
+      base_directory: checkpoints/
+
+  validation_definition_store:
+    class_name: ValidationDefinitionStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: validation_definitions/
+
+expectations_store_name: expectations_store
+validation_results_store_name: validation_results_store
+checkpoint_store_name: checkpoint_store
+
+data_docs_sites:
+  local_site:
+    class_name: SiteBuilder
+    show_how_to_buttons: true
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: uncommitted/data_docs/local_site/
+    site_index_builder:
+      class_name: DefaultSiteIndexBuilder
+
+fluent_datasources:
+  pandas_ds:
+    type: pandas
+    id: 9cc1e64d-1b37-4587-870c-3b80337c8c1d
+    assets:
+      invoices:
+        type: dataframe
+        id: 19036046-c023-4b16-8c68-d8b1e57382e1
+        batch_metadata: {}
+        batch_definitions:
+          invoices_batch:
+            id: 75244ef7-1f1c-46a3-99c2-020cf3d53266
+            partitioner:
+
+analytics_enabled:
+data_context_id: 0c906563-90a8-46c8-b66e-7add2af7a5ca

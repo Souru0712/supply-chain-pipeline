@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "19036046-c023-4b16-8c68-d8b1e57382e1",
+      "name": "invoices"
+    },
+    "batch_definition": {
+      "id": "75244ef7-1f1c-46a3-99c2-020cf3d53266",
+      "name": "invoices_batch"
+    },
+    "datasource": {
+      "id": "9cc1e64d-1b37-4587-870c-3b80337c8c1d",
+      "name": "pandas_ds"
+    }
+  },
+  "id": "b2954f69-b42a-4bf9-9276-26fe0692995f",
+  "name": "invoice_validation",
+  "suite": {
+    "id": "b15cfaf9-44df-4cf9-9efc-d2570f69550e",
+    "name": "invoice_suite"
+  }
+}

@@ -1,0 +1,9 @@
+supply_chain:
+  outputs:
+    dev:
+      type: duckdb
+      path: ":memory:"
+      threads: 4
+      extensions:
+        - parquet
+  target: dev

@@ -1,0 +1,141 @@
+version: 2
+
+sources:
+  - name: raw_macroeconomic
+    description: "FRED economic data ingested by 2a.ingest_fred.py and 2b.ingest_dollar_index.py. Refresh: PPI is monthly, dollar index is daily (weekdays)."
+    tables:
+      - name: fred_ppi
+        description: "Monthly Producer Price Index observations per ingredient_id. Multiple timestamped CSVs are unioned via glob."
+        meta:
+          external_location: "read_csv('../data/raw/macroeconomic/commodity_prices_*.csv', header=true, auto_detect=true, nullstr=['.', ''])"
+        columns:
+          - name: ingredient_id
+            description: "FK to fred_mapping — identifies the commodity"
+          - name: fred_series_id
+            description: "FRED series identifier (e.g. WPU01, WPU02230505)"
+          - name: ingredient_name
+            description: "Pipe-delimited list of commodity class descriptions"
+          - name: ppi
+            description: "Producer Price Index value"
+          - name: date
+            description: "Observation date (YYYY-MM-DD)"
+          - name: frequency
+            description: "Reporting frequency (monthly, annual, etc.)"
+
+      - name: dollar_index
+        description: "Daily trade-weighted US dollar index (FRED series DTWEXBGS). Multiple timestamped CSVs are unioned via glob."
+        meta:
+          external_location: "read_csv('../data/raw/macroeconomic/dollar_index_*.csv', header=true, auto_detect=true, nullstr=['.', ''])"
+        columns:
+          - name: fred_series_id
+            description: "Always DTWEXBGS"
+          - name: name
+            description: "Always dollar_index"
+          - name: ppi
+            description: "Trade-weighted dollar index value"
+          - name: ppi_date
+            description: "Observation date (YYYY-MM-DD)"
+          - name: ppi_frequency
+            description: "Always daily"
+
+  - name: raw_market
+    description: "USDA AMS market news reports ingested by 2c.ingest_ams.py. Refresh: daily/weekly depending on the state slug. Coverage: ~2020 onward."
+    tables:
+      - name: ams_reports
+        description: "Daily/weekly grain bid reports from 29 state/regional AMS slugs. Glob reads all AMS_*/ReportDetail.csv into one table."
+        meta:
+          external_location: "read_csv('../data/raw/market_and_logistic/AMS_*/ReportDetail.csv', header=true, auto_detect=true, union_by_name=true)"
+        columns:
+          - name: slug_id
+            description: "AMS report slug identifier (e.g. 2711, 3192)"
+          - name: report_title
+            description: "Report name (e.g. Texas Daily Grain Bids)"
+          - name: commodity
+            description: "Raw commodity name — needs normalization (e.g. Corn, Soybeans)"
+          - name: cat
+            description: "Commodity category (e.g. Coarse, Oilseeds)"
+          - name: grade
+            description: "USDA grade (e.g. US #1, US #2)"
+          - name: "price Min"
+            description: "Minimum bid price"
+          - name: "price Max"
+            description: "Maximum bid price"
+          - name: avg_price
+            description: "Average bid price"
+          - name: price_unit
+            description: "Price denomination (e.g. $ Per Bushel)"
+          - name: "sale Type"
+            description: "Sale type (e.g. Bid)"
+          - name: delivery_point
+            description: "Delivery location type (e.g. Country Elevators)"
+          - name: freight
+            description: "Freight terms (e.g. Delivered)"
+          - name: trans_mode
+            description: "Transportation mode (e.g. Truck)"
+          - name: market_location_state
+            description: "State abbreviation of the market location"
+          - name: report_date
+            description: "Report date in MM/DD/YYYY format — needs parsing to date type"
+
+  - name: raw_production
+    description: "USDA NASS crop data and reference tables. Refresh: NASS exports are periodic (annual crops), product_master and fred_mapping are static reference tables updated manually."
+    tables:
+      - name: nass_crops
+        description: "NASS QuickStats crop survey data (tab-delimited, ~8GB). Contains yield, production, stocks, and acreage data from 1972 onward."
+        meta:
+          external_location: "read_csv('../data/raw/production/qs.crops_20260327.txt', header=true, delim='\t', auto_detect=true)"
+        columns:
+          - name: COMMODITY_DESC
+            description: "Commodity name (e.g. SOYBEANS, CORN)"
+          - name: CLASS_DESC
+            description: "Commodity class (e.g. ALL CLASSES, YELLOW)"
+          - name: UNIT_DESC
+            description: "Unit of measure (e.g. BU, BU / ACRE, LB)"
+          - name: VALUE
+            description: "Reported value — contains commas in large numbers, needs cast to float"
+          - name: "CV_%"
+            description: "Coefficient of variation"
+          - name: YEAR
+            description: "Reporting year"
+          - name: FREQ_DESC
+            description: "Frequency (ANNUAL, POINT IN TIME)"
+          - name: STATE_NAME
+            description: "US state name"
+          - name: COUNTRY_NAME
+            description: "Always UNITED STATES"
+          - name: LOAD_TIME
+            description: "NASS load timestamp — needs parsing to date"
+
+      - name: product_master
+        description: "Normalized commodity reference table created by 1.create_product_master.py. Spark output directory — glob reads part-*.csv files."
+        meta:
+          external_location: "read_csv('../data/raw/production/product_master.csv/part-*.csv', header=true, auto_detect=true)"
+        columns:
+          - name: ingredient_id
+            description: "Unique commodity identifier (starts at 10001)"
+          - name: ingredient_group
+            description: "Top-level grouping (e.g. FIELD CROPS, ANIMAL TOTALS)"
+          - name: ingredient_description
+            description: "Detailed commodity description"
+          - name: ingredient_name
+            description: "Normalized commodity name (e.g. CORN, SOYBEAN)"
+          - name: unit_of_measure
+            description: "Standardized unit (e.g. LB, BU, TON)"
+
+      - name: fred_mapping
+        description: "Maps ingredient_id to FRED series_id. Used to join PPI data with commodity reference data."
+        meta:
+          external_location: "read_csv('../data/raw/production/fred_mapped.csv', header=true, auto_detect=true)"
+        columns:
+          - name: ingredient_id
+            description: "FK to product_master"
+          - name: ingredient_group
+            description: "Commodity group"
+          - name: ingredient_description
+            description: "Commodity description"
+          - name: ingredient_name
+            description: "Normalized commodity name"
+          - name: unit_of_measure
+            description: "Standardized unit"
+          - name: fred_series_id
+            description: "FRED PPI series identifier"

@@ -1,0 +1,12 @@
+.venv/
+target/
+__pycache__/
+dbt_packages/
+data/
+starter/
+mlruns/
+logs/
+*.pyc
+.env
+.claude
+project_plan.txt

@@ -1,0 +1,11 @@
+version: 2
+
+macros:
+  - name: rolling_avg_days
+    description: "Forward rolling average (AVG) over calendar-day intervals. See macros.md for details."
+
+  - name: rolling_avg_months
+    description: "Forward rolling average (AVG) over calendar-month intervals. See macros.md for details."
+
+  - name: fwd_pct_change
+    description: "Percent change between forward rolling averages and the current value. See macros.md for details."

@@ -1,0 +1,19 @@
+{
+  "expectations": [
+    {
+      "id": "4e536006-76b6-466d-a61c-4bc5105db9db",
+      "kwargs": {
+        "column": "invoice_id"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    }
+  ],
+  "id": "b15cfaf9-44df-4cf9-9efc-d2570f69550e",
+  "meta": {
+    "great_expectations_version": "1.15.1"
+  },
+  "name": "invoice_suite",
+  "notes": null
+}

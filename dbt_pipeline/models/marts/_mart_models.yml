@@ -1,0 +1,170 @@
+version: 2
+
+models:
+  # ---------------------------------------------------------------------------
+  # mart_dollar_index
+  # ---------------------------------------------------------------------------
+  - name: mart_dollar_index
+    description: "Standalone dollar index with forward rolling averages (7d-365d) and percent changes on ppi."
+    columns:
+      - name: fred_series_id
+        description: "Always DTWEXBGS"
+        data_tests:
+          - not_null
+      - name: ppi
+        description: "Dollar index value"
+        data_tests:
+          - not_null
+      - name: ppi_date
+        description: "Observation date"
+        data_tests:
+          - not_null
+      - name: ppi_fwd_7d
+        description: "7-day forward rolling average of ppi"
+      - name: ppi_fwd_14d
+        description: "14-day forward rolling average of ppi"
+      - name: ppi_fwd_30d
+        description: "30-day forward rolling average of ppi"
+      - name: ppi_fwd_90d
+        description: "90-day forward rolling average of ppi"
+      - name: ppi_fwd_180d
+        description: "180-day forward rolling average of ppi"
+      - name: ppi_fwd_365d
+        description: "365-day forward rolling average of ppi"
+
+  # ---------------------------------------------------------------------------
+  # mart_macroeconomic
+  # ---------------------------------------------------------------------------
+  - name: mart_macroeconomic
+    description: "fred_mapping JOIN fred_ppi ON ingredient_id — forward rolling averages (1mo-12mo) and percent changes on ppi. Filtered by ingredient_name var."
+    columns:
+      - name: ingredient_id
+        description: "Commodity identifier"
+        data_tests:
+          - not_null
+      - name: ingredient_name
+        description: "Filtered commodity name"
+        data_tests:
+          - not_null
+      - name: ppi
+        description: "Producer Price Index value"
+        data_tests:
+          - not_null
+      - name: ppi_date
+        description: "PPI observation date"
+        data_tests:
+          - not_null
+      - name: ppi_fwd_1mo
+        description: "1-month forward rolling average of ppi"
+      - name: ppi_fwd_3mo
+        description: "3-month forward rolling average of ppi"
+      - name: ppi_fwd_6mo
+        description: "6-month forward rolling average of ppi"
+      - name: ppi_fwd_12mo
+        description: "12-month forward rolling average of ppi"
+
+  # ---------------------------------------------------------------------------
+  # mart_market_and_logistic
+  # ---------------------------------------------------------------------------
+  - name: mart_market_and_logistic
+    description: "fred_mapping JOIN ams_market ON ingredient_name — daily aggregation with forward rolling averages (7d-365d) and percent changes on price_avg. Filtered by ingredient_name var."
+    columns:
+      - name: ingredient_id
+        description: "Commodity identifier"
+        data_tests:
+          - not_null
+      - name: ingredient_name
+        description: "Filtered commodity name"
+        data_tests:
+          - not_null
+      - name: price_avg
+        description: "Daily average bid price"
+      - name: price_min
+        description: "Daily minimum bid price"
+      - name: price_max
+        description: "Daily maximum bid price"
+      - name: report_date
+        description: "Report date"
+        data_tests:
+          - not_null
+      - name: price_avg_fwd_7d
+        description: "7-day forward rolling average of price_avg"
+      - name: price_avg_fwd_90d
+        description: "90-day forward rolling average of price_avg"
+      - name: price_avg_fwd_365d
+        description: "365-day forward rolling average of price_avg"
+
+  # ---------------------------------------------------------------------------
+  # mart_nass
+  # ---------------------------------------------------------------------------
+  - name: mart_nass
+    description: "fred_mapping JOIN nass ON (ingredient_name, unit_of_measure) — forward rolling averages (7d-365d) and percent changes on amount. Filtered by ingredient_name var."
+    columns:
+      - name: ingredient_id
+        description: "Commodity identifier"
+        data_tests:
+          - not_null
+      - name: ingredient_name
+        description: "Filtered commodity name"
+        data_tests:
+          - not_null
+      - name: amount
+        description: "NASS reported value"
+        data_tests:
+          - not_null
+      - name: load_time
+        description: "NASS load date"
+        data_tests:
+          - not_null
+      - name: amount_fwd_7d
+        description: "7-day forward rolling average of amount"
+      - name: amount_fwd_90d
+        description: "90-day forward rolling average of amount"
+      - name: amount_fwd_365d
+        description: "365-day forward rolling average of amount"
+
+  # ---------------------------------------------------------------------------
+  # mart_corn_training_weekly
+  # ---------------------------------------------------------------------------
+  - name: mart_corn_training_weekly
+    description: "Weekly training table for the 13-week direct multi-output price forecast. All features are strictly backward-looking (lags plus trailing rolling windows) to prevent leakage. The training script shifts price_avg_weekly backward to build per-horizon targets for horizons 1 through 13."
+    columns:
+      - name: week_start
+        description: "Week start date. Unique key of the table."
+        data_tests:
+          - not_null
+          - unique
+      - name: price_avg_weekly
+        description: "Weekly mean of AMS price_avg. Used as the forecast target."
+        data_tests:
+          - not_null
+      - name: price_min_weekly
+        description: "Weekly min of AMS price_min."
+      - name: price_max_weekly
+        description: "Weekly max of AMS price_max."
+      - name: n_reports_in_week
+        description: "Number of underlying AMS rows aggregated into the week."
+        data_tests:
+          - not_null
+      - name: price_lag_1w
+        description: "price_avg_weekly lagged 1 week."
+      - name: price_lag_13w
+        description: "price_avg_weekly lagged 13 weeks — matches forecast horizon."
+      - name: price_lag_52w
+        description: "price_avg_weekly lagged 52 weeks — year-over-year anchor."
+      - name: price_hist_avg_12w
+        description: "Trailing 12-week mean of price_avg_weekly, excluding current row."
+      - name: price_hist_std_12w
+        description: "Trailing 12-week stddev of price_avg_weekly — volatility proxy."
+      - name: di_ppi
+        description: "Dollar index PPI, last observation within the week. Nulls filled downstream."
+      - name: macro_ppi
+        description: "FRED PPI for this ingredient, stamped on the week of the monthly release."
+      - name: year
+        description: "Calendar year extracted from week_start."
+      - name: week_of_year
+        description: "ISO week number, 1 to 53."
+      - name: month
+        description: "Calendar month, 1 to 12."
+      - name: quarter
+        description: "Calendar quarter, 1 to 4."
