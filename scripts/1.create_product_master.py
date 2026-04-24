@@ -62,12 +62,18 @@ OUTPUT_FILE = "data/raw/production/product_master.csv"
 
 SOURCE_COLUMNS = {
     "ingredient_group": "GROUP_DESC",
-    "ingredient_description":  "COMMODITY_DESC",
+    "ingredient_description": "COMMODITY_DESC",
     "ingredient_name": "CLASS_DESC",
-    "unit_of_measure":  "UNIT_DESC",
+    "unit_of_measure": "UNIT_DESC",
 }
 
-OUTPUT_COLUMNS = ["ingredient_id", "ingredient_group", "ingredient_description", "ingredient_name", "unit_of_measure"]
+OUTPUT_COLUMNS = [
+    "ingredient_id",
+    "ingredient_group",
+    "ingredient_description",
+    "ingredient_name",
+    "unit_of_measure",
+]
 
 # ingredient_id sequence start
 ID_START = 10001
@@ -77,16 +83,18 @@ ID_START = 10001
 # Any key field that resolves to one of these strings (after whitespace
 # collapse + uppercasing) is treated as missing and the row is discarded.
 # ---------------------------------------------------------------------------
-NULL_SENTINELS: frozenset[str] = frozenset({
-    "(D)",            # Withheld to avoid disclosing individual operation data
-    "(NA)",           # Not available
-    "(Z)",            # Less than half the unit shown
-    "NOT SPECIFIED",
-    "NOT AVAILABLE",
-    "N/A",
-    "NA",
-    "TOTAL",          # Aggregate roll-up rows, not a real ingredient
-})
+NULL_SENTINELS: frozenset[str] = frozenset(
+    {
+        "(D)",  # Withheld to avoid disclosing individual operation data
+        "(NA)",  # Not available
+        "(Z)",  # Less than half the unit shown
+        "NOT SPECIFIED",
+        "NOT AVAILABLE",
+        "N/A",
+        "NA",
+        "TOTAL",  # Aggregate roll-up rows, not a real ingredient
+    }
+)
 
 # ---------------------------------------------------------------------------
 # 2. Punctuation normalisation regex
@@ -105,12 +113,12 @@ _PUNCT_RE = re.compile(r"[\-\u2013\u2014,.]+")
 # forms need to appear in ALLOWED_UNITS.
 # ---------------------------------------------------------------------------
 UNIT_PLURAL_MAP: dict[str, str] = {
-    "TONS":    "TON",
-    "BALES":   "BALE",
+    "TONS": "TON",
+    "BALES": "BALE",
     "BUSHELS": "BU",
     "GALLONS": "GALLON",
     "BARRELS": "BARREL",
-    "DOZENS":  "DOZEN",
+    "DOZENS": "DOZEN",
 }
 
 # ---------------------------------------------------------------------------
@@ -118,38 +126,41 @@ UNIT_PLURAL_MAP: dict[str, str] = {
 # Checked AFTER plural normalisation, so only canonical singular forms
 # need to be listed here.
 # ---------------------------------------------------------------------------
-ALLOWED_UNITS: frozenset[str] = frozenset({
-    # Mass & Weight
-    "LB",
-    "CWT",
-    "TON",
-    "TONS, DRY BASIS",
-    "TONS, FRESH BASIS",
-    # Volume & Bulk
-    "BU",
-    "GALLON",
-    "BARREL",
-    "BALE",
-    "480 LB BALES",
-    # Quantity & Count
-    "HEAD",
-    "DOZEN",
-    "THOUSANDS",
-    "INDEX",
-    # Dollar-denominated units
-    "$ / LB",
-    "$ / CWT",
-    "$ / TON",
-    "$ / BU",
-    "$ / HEAD",
-    "$ / DOZEN",
-    "$ / GALLON",
-})
+ALLOWED_UNITS: frozenset[str] = frozenset(
+    {
+        # Mass & Weight
+        "LB",
+        "CWT",
+        "TON",
+        "TONS, DRY BASIS",
+        "TONS, FRESH BASIS",
+        # Volume & Bulk
+        "BU",
+        "GALLON",
+        "BARREL",
+        "BALE",
+        "480 LB BALES",
+        # Quantity & Count
+        "HEAD",
+        "DOZEN",
+        "THOUSANDS",
+        "INDEX",
+        # Dollar-denominated units
+        "$ / LB",
+        "$ / CWT",
+        "$ / TON",
+        "$ / BU",
+        "$ / HEAD",
+        "$ / DOZEN",
+        "$ / GALLON",
+    }
+)
 
 
 # ---------------------------------------------------------------------------
 # Normalisation helpers
 # ---------------------------------------------------------------------------
+
 
 def _collapse_whitespace(text: str) -> str:
     """Strip outer whitespace and collapse internal runs (including tabs,
@@ -205,6 +216,7 @@ def _normalize_unit(raw: str) -> str:
 # PySpark UDF wrappers
 # ---------------------------------------------------------------------------
 
+
 def _normalize_text_spark(text):
     """UDF wrapper: normalise a text field with punctuation stripping."""
     return _normalize_text(text or "", strip_punct=True)
@@ -223,6 +235,7 @@ normalize_unit_udf = F.udf(_normalize_unit_spark, StringType())
 # Delimiter detection
 # ---------------------------------------------------------------------------
 
+
 def detect_delimiter(filepath: str) -> str:
     """Sniff the delimiter from the first line of the file."""
     try:
@@ -232,8 +245,9 @@ def detect_delimiter(filepath: str) -> str:
         logger.error("Could not open '%s' to detect delimiter: %s", filepath, exc)
         raise
 
-    if first_line.count("\t") > first_line.count(",") and \
-       first_line.count("\t") > first_line.count("|"):
+    if first_line.count("\t") > first_line.count(",") and first_line.count(
+        "\t"
+    ) > first_line.count("|"):
         detected = "\t"
     elif first_line.count("|") > first_line.count(","):
         detected = "|"
@@ -248,14 +262,13 @@ def detect_delimiter(filepath: str) -> str:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     logger.info("=" * 50)
     logger.info("NASS Product Master Builder — starting (Spark mode)")
     logger.info("=" * 50)
 
-    spark = SparkSession.builder \
-        .appName("CreateProductMaster") \
-        .getOrCreate()
+    spark = SparkSession.builder.appName("CreateProductMaster").getOrCreate()
 
     # ------------------------------------------------------------------
     # Read all source files and union into a single DataFrame
@@ -291,8 +304,10 @@ def main() -> None:
     # ------------------------------------------------------------------
     # Apply normalisation UDFs
     # ------------------------------------------------------------------
-    df = (df
-        .withColumn("ingredient_description", normalize_text_udf("ingredient_description"))
+    df = (
+        df.withColumn(
+            "ingredient_description", normalize_text_udf("ingredient_description")
+        )
         .withColumn("ingredient_name", normalize_text_udf("ingredient_name"))
         .withColumn("ingredient_group", normalize_text_udf("ingredient_group"))
         .withColumn("unit_of_measure", normalize_unit_udf("unit_of_measure"))
@@ -302,25 +317,36 @@ def main() -> None:
     # Filter out empty/sentinel fields and non-allowed units
     # ------------------------------------------------------------------
     df = df.filter(
-        (F.col("ingredient_description") != "") &
-        (F.col("ingredient_group") != "") &
-        (F.col("unit_of_measure") != "") &
-        F.col("unit_of_measure").isin(list(ALLOWED_UNITS))
+        (F.col("ingredient_description") != "")
+        & (F.col("ingredient_group") != "")
+        & (F.col("unit_of_measure") != "")
+        & F.col("unit_of_measure").isin(list(ALLOWED_UNITS))
     )
 
     # ------------------------------------------------------------------
     # Distinct on the four ingredient columns
     # ------------------------------------------------------------------
-    df = df.dropDuplicates(["ingredient_description", "ingredient_name", "ingredient_group", "unit_of_measure"])
+    df = df.dropDuplicates(
+        [
+            "ingredient_description",
+            "ingredient_name",
+            "ingredient_group",
+            "unit_of_measure",
+        ]
+    )
 
     # ------------------------------------------------------------------
     # Add ingredient_id starting at ID_START (10001)
     # ------------------------------------------------------------------
-    w = Window.orderBy("ingredient_group", "ingredient_description", "ingredient_name", "unit_of_measure")
-    df = (df
-        .withColumn("ingredient_id", F.row_number().over(w) + F.lit(ID_START - 1))
-        .select(OUTPUT_COLUMNS)
+    w = Window.orderBy(
+        "ingredient_group",
+        "ingredient_description",
+        "ingredient_name",
+        "unit_of_measure",
     )
+    df = df.withColumn(
+        "ingredient_id", F.row_number().over(w) + F.lit(ID_START - 1)
+    ).select(OUTPUT_COLUMNS)
 
     # ------------------------------------------------------------------
     # Write output

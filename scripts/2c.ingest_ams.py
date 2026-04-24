@@ -14,9 +14,9 @@ To add more reports, add entries to REPORT_SLUGS below.
 The script will fetch all available history (back to ~2020) in one call.
 Each slug_id writes to a single canonical folder (overwrites on re-run).
 """
+
 import os
 import logging
-from re import M
 import requests
 import pandas as pd
 from dotenv import load_dotenv
@@ -82,7 +82,7 @@ REPORT_SLUGS = {
     3088: "Tennessee Grain Bids",
     2711: "Texas Grain Bids",
     3167: "Virginia Grain Bids",
-    3239: "Wyoming Grain Bids"
+    3239: "Wyoming Grain Bids",
 }
 
 
@@ -128,12 +128,14 @@ def fetch_report_detail(slug_id: int) -> pd.DataFrame:
                     f"  slug_id={slug_id}: only {returned} of {total} rows returned. "
                     "API row limit reached."
                 )
-                print(f"  WARNING: API returned {returned}/{total} — some rows truncated")
+                print(
+                    f"  WARNING: API returned {returned}/{total} — some rows truncated"
+                )
 
             return pd.DataFrame(rows)
 
     logger.warning(f"No Report Detail section found for slug_id={slug_id}")
-    print(f"  WARNING: no Report Detail section in response")
+    print("  WARNING: no Report Detail section in response")
     return pd.DataFrame()
 
 
@@ -161,6 +163,7 @@ def write_report(df: pd.DataFrame, slug_id: int) -> str:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import urllib3
+
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     print(f"AMS Market News Ingestion — {len(REPORT_SLUGS)} report(s)\n")
@@ -172,7 +175,7 @@ if __name__ == "__main__":
         df = fetch_report_detail(slug_id)
 
         if df.empty:
-            print(f"  No data returned, skipping.\n")
+            print("  No data returned, skipping.\n")
             continue
 
         # Show summary

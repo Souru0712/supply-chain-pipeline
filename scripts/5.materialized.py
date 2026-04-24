@@ -92,6 +92,7 @@ ALL CLASSES	TONS	184200		1991	ANNUAL	YEAR	2012-01-01	NY	UNITED STATES
 JOIN ON ingredient_name (names SHOULD match because the name from fred_mapping is taken from here)
 ------------------------------------------------------------------------------------------------------------------------------
 """
+
 import os
 import duckdb
 
@@ -285,9 +286,18 @@ SOURCE_DEPS = {
 
 MATERIALIZERS = {
     "dollar_index": ("dollar_index (standalone)", materialize_dollar_index),
-    "macroeconomic": ("fred_mapping x macroeconomic (JOIN ON ingredient_id)", join_macroeconomic),
-    "market_and_logistic": ("fred_mapping x market_and_logistic (JOIN ON ingredient_name)", join_market_and_logistic),
-    "nass": ("fred_mapping x nass (JOIN ON ingredient_name, unit_of_measure)", join_nass),
+    "macroeconomic": (
+        "fred_mapping x macroeconomic (JOIN ON ingredient_id)",
+        join_macroeconomic,
+    ),
+    "market_and_logistic": (
+        "fred_mapping x market_and_logistic (JOIN ON ingredient_name)",
+        join_market_and_logistic,
+    ),
+    "nass": (
+        "fred_mapping x nass (JOIN ON ingredient_name, unit_of_measure)",
+        join_nass,
+    ),
 }
 
 
@@ -326,7 +336,9 @@ if __name__ == "__main__":
     output_dir = f"data/materialized/{name}"
     os.makedirs(output_dir, exist_ok=True)
 
-    targets = MATERIALIZERS if args.only == "all" else {args.only: MATERIALIZERS[args.only]}
+    targets = (
+        MATERIALIZERS if args.only == "all" else {args.only: MATERIALIZERS[args.only]}
+    )
 
     for dataset, (label, join_fn) in targets.items():
         out_path = f"{output_dir}/{dataset}.parquet"
