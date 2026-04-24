@@ -1,12 +1,39 @@
+# Python
 .venv/
-target/
 __pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Secrets / local config
+.env
+.env.*
+!.env.example
+.claude
+
+# dbt
+target/
 dbt_packages/
+logs/
+*.duckdb
+*.duckdb.wal
+
+# Data (stored in S3, not git)
 data/
 starter/
+
+# ML artifacts (regenerable)
 mlruns/
-logs/
-*.pyc
-.env
-.claude
+models/
+
+# Great Expectations local artifacts
+gx/uncommitted/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Personal notes
 project_plan.txt
