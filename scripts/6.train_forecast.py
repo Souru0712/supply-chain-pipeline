@@ -34,7 +34,7 @@ import argparse
 import json
 import warnings
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Callable, List, Sequence
 
 import lightgbm as lgb
 import mlflow
@@ -129,7 +129,10 @@ def cv_metrics(
     for train_idx, test_idx in tscv.split(X):
         dtrain = lgb.Dataset(X[train_idx], label=y[train_idx])
         dvalid = lgb.Dataset(X[test_idx], label=y[test_idx], reference=dtrain)
-        callbacks = [lgb.early_stopping(50, verbose=False), lgb.log_evaluation(-1)]
+        callbacks: List[Callable[..., Any]] = [
+            lgb.early_stopping(50, verbose=False),
+            lgb.log_evaluation(-1),
+        ]
         booster = lgb.train(
             params,
             dtrain,
@@ -167,7 +170,10 @@ def fit_final(X: np.ndarray, y: np.ndarray, params: dict) -> lgb.Booster:
     cut = int(len(X) * 0.85)
     dtrain = lgb.Dataset(X[:cut], label=y[:cut])
     dval = lgb.Dataset(X[cut:], label=y[cut:], reference=dtrain)
-    callbacks = [lgb.early_stopping(50, verbose=False), lgb.log_evaluation(-1)]
+    callbacks: List[Callable[..., Any]] = [
+        lgb.early_stopping(50, verbose=False),
+        lgb.log_evaluation(-1),
+    ]
     return lgb.train(
         params,
         dtrain,
