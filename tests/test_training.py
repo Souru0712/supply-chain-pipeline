@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
-import xgboost as xgb
+import lightgbm as lgb
 
 
 # ---------------------------------------------------------------------------
@@ -65,17 +65,17 @@ def test_select_feature_columns_returns_list(train_module, weekly_df):
 
 
 # ---------------------------------------------------------------------------
-# xgb_params
+# lgb_params
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("q", [0.1, 0.5, 0.9])
-def test_xgb_params_structure(train_module, q):
-    params = train_module.xgb_params(q)
-    assert params["objective"] == "reg:quantileerror"
-    assert params["quantile_alpha"] == pytest.approx(q)
+def test_lgb_params_structure(train_module, q):
+    params = train_module.lgb_params(q)
+    assert params["objective"] == "quantile"
+    assert params["alpha"] == pytest.approx(q)
     assert "learning_rate" in params
-    assert "max_depth" in params
+    assert "num_leaves" in params
 
 
 # ---------------------------------------------------------------------------
@@ -87,7 +87,7 @@ def test_cv_metrics_returns_expected_keys(train_module):
     rng = np.random.default_rng(1)
     X = rng.standard_normal((80, 5)).astype(np.float32)
     y = (X[:, 0] * 2 + rng.standard_normal(80) * 0.1).astype(np.float32)
-    params = train_module.xgb_params(0.5)
+    params = train_module.lgb_params(0.5)
     metrics = train_module.cv_metrics(X, y, params, n_splits=2)
     assert set(metrics.keys()) == {"mae", "rmse", "mape"}
     for v in metrics.values():
@@ -103,9 +103,9 @@ def test_fit_final_returns_booster(train_module):
     rng = np.random.default_rng(2)
     X = rng.standard_normal((80, 5)).astype(np.float32)
     y = (X[:, 0] + rng.standard_normal(80) * 0.1).astype(np.float32)
-    booster = train_module.fit_final(X, y, train_module.xgb_params(0.5))
-    assert isinstance(booster, xgb.Booster)
-    preds = booster.predict(xgb.DMatrix(X))
+    booster = train_module.fit_final(X, y, train_module.lgb_params(0.5))
+    assert isinstance(booster, lgb.Booster)
+    preds = booster.predict(X)
     assert preds.shape == (80,)
 
 

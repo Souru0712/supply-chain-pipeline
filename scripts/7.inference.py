@@ -1,12 +1,12 @@
 """
-Inference pipeline: load trained XGBoost models and produce a weekly forecast table.
+Inference pipeline: load trained LightGBM models and produce a weekly forecast table.
 
 Takes the most recent observation from the training parquet, applies all 13 horizon
 models (p10/p50/p90), and writes a 13-row forecast schedule.
 
 Inputs
 ------
-- models/<ingredient>/xgb_h{h}.json  (and _q10, _q90 variants)
+- models/<ingredient>/lgb_h{h}.txt  (and _q10, _q90 variants)
 - models/<ingredient>/metadata.json
 - data/materialized/<ingredient>/training_weekly.parquet
 
@@ -28,9 +28,9 @@ import json
 import warnings
 from pathlib import Path
 
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
-import xgboost as xgb
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -53,16 +53,15 @@ def load_metadata(ingredient: str) -> dict:
         return json.load(fh)
 
 
-def load_models(ingredient: str, horizons: list[int]) -> dict[str, xgb.Booster]:
-    """Load the p10/p50/p90 XGBoost boosters for every horizon."""
+def load_models(ingredient: str, horizons: list[int]) -> dict[str, lgb.Booster]:
+    """Load the p10/p50/p90 LightGBM boosters for every horizon."""
     model_dir = MODELS_DIR / ingredient.lower()
-    models: dict[str, xgb.Booster] = {}
+    models: dict[str, lgb.Booster] = {}
     for h in horizons:
         for suffix, key in [("", "q50"), ("_q10", "q10"), ("_q90", "q90")]:
-            model_path = model_dir / f"xgb_h{h}{suffix}.json"
+            model_path = model_dir / f"lgb_h{h}{suffix}.txt"
             if model_path.exists():
-                booster = xgb.Booster()
-                booster.load_model(str(model_path))
+                booster = lgb.Booster(model_file=str(model_path))
                 models[f"h{h}_{key}"] = booster
     return models
 
@@ -107,7 +106,7 @@ def run_inference(ingredient: str, as_of: str | None = None) -> pd.DataFrame:
     models = load_models(ingredient, horizons)
     feature_row, forecast_date = load_feature_row(ingredient, feature_cols, as_of)
 
-    X = xgb.DMatrix(feature_row.to_numpy().astype(np.float32))
+    X = feature_row.to_numpy().astype(np.float32)
 
     rows = []
     for h in horizons:
