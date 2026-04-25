@@ -55,7 +55,9 @@ def validate_macroeconomic():
     results = {}
 
     # 1 — no duplicate (ingredient_id, ppi_date) pairs
-    r = batch.validate(ExpectCompoundColumnsToBeUnique(column_list=["ingredient_id", "ppi_date"]))
+    r = batch.validate(
+        ExpectCompoundColumnsToBeUnique(column_list=["ingredient_id", "ppi_date"])
+    )
     results["compound_unique"] = r
     logger.info(f"compound_unique (ingredient_id, ppi_date): success={r.success}")
 
@@ -80,7 +82,9 @@ def validate_macroeconomic():
     logger.info(f"ppi_date_not_null: success={r.success}")
 
     # 3b — ppi_date matches yyyy-mm-dd
-    r = batch.validate(ExpectColumnValuesToMatchRegex(column="ppi_date", regex=r"^\d{4}-\d{2}-\d{2}$"))
+    r = batch.validate(
+        ExpectColumnValuesToMatchRegex(column="ppi_date", regex=r"^\d{4}-\d{2}-\d{2}$")
+    )
     results["ppi_date_format"] = r
     logger.info(f"ppi_date_format (yyyy-mm-dd): success={r.success}")
 
@@ -105,7 +109,9 @@ def quarantine_macroeconomic(df, results):
     if not results["compound_unique"].success:
         dupes = df.duplicated(subset=["ingredient_id", "ppi_date"], keep=False)
         bad_mask |= dupes
-        logger.info(f"  quarantine: {dupes.sum()} rows have duplicate (ingredient_id, ppi_date)")
+        logger.info(
+            f"  quarantine: {dupes.sum()} rows have duplicate (ingredient_id, ppi_date)"
+        )
 
     # ppi is null
     if not results["ppi_not_null"].success:
@@ -120,8 +126,13 @@ def quarantine_macroeconomic(df, results):
         logger.info(f"  quarantine: {mask.sum()} rows have ppi=0.0")
 
     # ppi_date null or bad format
-    if not results["ppi_date_not_null"].success or not results["ppi_date_format"].success:
-        mask = df["ppi_date"].isna() | ~df["ppi_date"].astype(str).str.match(r"^\d{4}-\d{2}-\d{2}$")
+    if (
+        not results["ppi_date_not_null"].success
+        or not results["ppi_date_format"].success
+    ):
+        mask = df["ppi_date"].isna() | ~df["ppi_date"].astype(str).str.match(
+            r"^\d{4}-\d{2}-\d{2}$"
+        )
         bad_mask |= mask
         logger.info(f"  quarantine: {mask.sum()} rows have null/bad ppi_date")
 
@@ -135,13 +146,19 @@ def quarantine_macroeconomic(df, results):
     clean = df[~bad_mask]
 
     if len(quarantined) > 0:
-        quarantined.to_parquet("data/staged/quarantine/macroeconomic.parquet", index=False)
-        logger.info(f"  quarantined {len(quarantined)} rows → data/staged/quarantine/macroeconomic.parquet")
+        quarantined.to_parquet(
+            "data/staged/quarantine/macroeconomic.parquet", index=False
+        )
+        logger.info(
+            f"  quarantined {len(quarantined)} rows → data/staged/quarantine/macroeconomic.parquet"
+        )
     else:
         logger.info("  no rows quarantined — all checks passed at row level")
 
     clean.to_parquet("data/staged/validated/macroeconomic.parquet", index=False)
-    logger.info(f"  validated {len(clean)} rows → data/staged/validated/macroeconomic.parquet")
+    logger.info(
+        f"  validated {len(clean)} rows → data/staged/validated/macroeconomic.parquet"
+    )
 
 
 # =========================================================================================================
@@ -187,7 +204,9 @@ def validate_dollar_index():
     logger.info(f"ppi_date_not_null: success={r.success}")
 
     # 2b — ppi_date matches yyyy-mm-dd
-    r = batch.validate(ExpectColumnValuesToMatchRegex(column="ppi_date", regex=r"^\d{4}-\d{2}-\d{2}$"))
+    r = batch.validate(
+        ExpectColumnValuesToMatchRegex(column="ppi_date", regex=r"^\d{4}-\d{2}-\d{2}$")
+    )
     results["ppi_date_format"] = r
     logger.info(f"ppi_date_format (yyyy-mm-dd): success={r.success}")
 
@@ -221,8 +240,13 @@ def quarantine_dollar_index(df, results):
         logger.info(f"  quarantine: {mask.sum()} rows have ppi=0.0")
 
     # ppi_date null or bad format
-    if not results["ppi_date_not_null"].success or not results["ppi_date_format"].success:
-        mask = df["ppi_date"].isna() | ~df["ppi_date"].astype(str).str.match(r"^\d{4}-\d{2}-\d{2}$")
+    if (
+        not results["ppi_date_not_null"].success
+        or not results["ppi_date_format"].success
+    ):
+        mask = df["ppi_date"].isna() | ~df["ppi_date"].astype(str).str.match(
+            r"^\d{4}-\d{2}-\d{2}$"
+        )
         bad_mask |= mask
         logger.info(f"  quarantine: {mask.sum()} rows have null/bad ppi_date")
 
@@ -236,22 +260,35 @@ def quarantine_dollar_index(df, results):
     clean = df[~bad_mask]
 
     if len(quarantined) > 0:
-        quarantined.to_parquet("data/staged/quarantine/dollar_index.parquet", index=False)
-        logger.info(f"  quarantined {len(quarantined)} rows → data/staged/quarantine/dollar_index.parquet")
+        quarantined.to_parquet(
+            "data/staged/quarantine/dollar_index.parquet", index=False
+        )
+        logger.info(
+            f"  quarantined {len(quarantined)} rows → data/staged/quarantine/dollar_index.parquet"
+        )
     else:
         logger.info("  no rows quarantined — all checks passed at row level")
 
     clean.to_parquet("data/staged/validated/dollar_index.parquet", index=False)
-    logger.info(f"  validated {len(clean)} rows → data/staged/validated/dollar_index.parquet")
+    logger.info(
+        f"  validated {len(clean)} rows → data/staged/validated/dollar_index.parquet"
+    )
 
 
 # =========================================================================================================
 # market & logistic
 # =========================================================================================================
 MARKET_STRING_COLS = [
-    "report_title", "ams_ingredient_name", "ams_ingredient_group",
-    "ams_ingredient_grade", "price_unit", "sale_type",
-    "delivery_point", "freight", "trans_mode", "market_location_state",
+    "report_title",
+    "ams_ingredient_name",
+    "ams_ingredient_group",
+    "ams_ingredient_grade",
+    "price_unit",
+    "sale_type",
+    "delivery_point",
+    "freight",
+    "trans_mode",
+    "market_location_state",
 ]
 
 
@@ -277,18 +314,26 @@ def validate_market_and_logistic():
 
     # 1 — string columns are uppercased (no lowercase chars)
     for col_name in MARKET_STRING_COLS:
-        r = batch.validate(ExpectColumnValuesToNotMatchRegex(column=col_name, regex=r"[a-z]"))
+        r = batch.validate(
+            ExpectColumnValuesToNotMatchRegex(column=col_name, regex=r"[a-z]")
+        )
         results[f"{col_name}_upper"] = r
         logger.info(f"{col_name}_upper: success={r.success}")
 
     # 3 — price columns: float type (NULLs allowed)
     for col_name in ["price_min", "price_max", "price_avg"]:
-        r = batch.validate(ExpectColumnValuesToBeOfType(column=col_name, type_="float32"))
+        r = batch.validate(
+            ExpectColumnValuesToBeOfType(column=col_name, type_="float32")
+        )
         results[f"{col_name}_type"] = r
         logger.info(f"{col_name}_type (float32): success={r.success}")
 
     # 4 — report_date formatted yyyy-mm-dd
-    r = batch.validate(ExpectColumnValuesToMatchRegex(column="report_date", regex=r"^\d{4}-\d{2}-\d{2}$"))
+    r = batch.validate(
+        ExpectColumnValuesToMatchRegex(
+            column="report_date", regex=r"^\d{4}-\d{2}-\d{2}$"
+        )
+    )
     results["report_date_format"] = r
     logger.info(f"report_date_format (yyyy-mm-dd): success={r.success}")
 
@@ -296,7 +341,9 @@ def validate_market_and_logistic():
     quarantine_market_and_logistic(df, results)
 
     all_passed = all(r.success for r in results.values())
-    logger.info(f"market_and_logistic validation {'PASSED' if all_passed else 'FAILED'}")
+    logger.info(
+        f"market_and_logistic validation {'PASSED' if all_passed else 'FAILED'}"
+    )
     return all_passed
 
 
@@ -313,7 +360,9 @@ def quarantine_market_and_logistic(df, results):
 
     # bad report_date
     if not results["report_date_format"].success:
-        mask = df["report_date"].isna() | ~df["report_date"].astype(str).str.match(r"^\d{4}-\d{2}-\d{2}$")
+        mask = df["report_date"].isna() | ~df["report_date"].astype(str).str.match(
+            r"^\d{4}-\d{2}-\d{2}$"
+        )
         bad_mask |= mask
         logger.info(f"  quarantine: {mask.sum()} rows have null/bad report_date")
 
@@ -321,21 +370,31 @@ def quarantine_market_and_logistic(df, results):
     clean = df[~bad_mask]
 
     if len(quarantined) > 0:
-        quarantined.to_parquet("data/staged/quarantine/market_and_logistic.parquet", index=False)
-        logger.info(f"  quarantined {len(quarantined)} rows → data/staged/quarantine/market_and_logistic.parquet")
+        quarantined.to_parquet(
+            "data/staged/quarantine/market_and_logistic.parquet", index=False
+        )
+        logger.info(
+            f"  quarantined {len(quarantined)} rows → data/staged/quarantine/market_and_logistic.parquet"
+        )
     else:
         logger.info("  no rows quarantined — all checks passed at row level")
 
     clean.to_parquet("data/staged/validated/market_and_logistic.parquet", index=False)
-    logger.info(f"  validated {len(clean)} rows → data/staged/validated/market_and_logistic.parquet")
+    logger.info(
+        f"  validated {len(clean)} rows → data/staged/validated/market_and_logistic.parquet"
+    )
 
 
 # =========================================================================================================
 # production
 # =========================================================================================================
 NASS_STRING_COLS = [
-    "ingredient_name", "unit_of_measure", "frequency",
-    "range", "state", "country",
+    "ingredient_name",
+    "unit_of_measure",
+    "frequency",
+    "range",
+    "state",
+    "country",
 ]
 
 
@@ -360,7 +419,9 @@ def validate_nass():
 
     # 1 — string columns are uppercased (no lowercase chars)
     for col_name in NASS_STRING_COLS:
-        r = batch.validate(ExpectColumnValuesToNotMatchRegex(column=col_name, regex=r"[a-z]"))
+        r = batch.validate(
+            ExpectColumnValuesToNotMatchRegex(column=col_name, regex=r"[a-z]")
+        )
         results[f"{col_name}_upper"] = r
         logger.info(f"{col_name}_upper: success={r.success}")
 
@@ -371,7 +432,9 @@ def validate_nass():
         logger.info(f"{col_name}_not_null: success={r.success}")
 
     # 3 — load_time formatted yyyy-mm-dd (Spark DateType → pandas object/date)
-    r = batch.validate(ExpectColumnValuesToMatchRegex(column="load_time", regex=r"^\d{4}-\d{2}-\d{2}$"))
+    r = batch.validate(
+        ExpectColumnValuesToMatchRegex(column="load_time", regex=r"^\d{4}-\d{2}-\d{2}$")
+    )
     results["load_time_format"] = r
     logger.info(f"load_time_format (yyyy-mm-dd): success={r.success}")
 
@@ -403,7 +466,9 @@ def quarantine_nass(df, results):
 
     # load_time null or bad format
     if not results["load_time_format"].success:
-        mask = df["load_time"].isna() | ~df["load_time"].astype(str).str.match(r"^\d{4}-\d{2}-\d{2}$")
+        mask = df["load_time"].isna() | ~df["load_time"].astype(str).str.match(
+            r"^\d{4}-\d{2}-\d{2}$"
+        )
         bad_mask |= mask
         logger.info(f"  quarantine: {mask.sum()} rows have null/bad load_time")
 
@@ -412,7 +477,9 @@ def quarantine_nass(df, results):
 
     if len(quarantined) > 0:
         quarantined.to_parquet("data/staged/quarantine/nass.parquet", index=False)
-        logger.info(f"  quarantined {len(quarantined)} rows → data/staged/quarantine/nass.parquet")
+        logger.info(
+            f"  quarantined {len(quarantined)} rows → data/staged/quarantine/nass.parquet"
+        )
     else:
         logger.info("  no rows quarantined — all checks passed at row level")
 
@@ -476,13 +543,19 @@ def quarantine_fred_mapping(df, results):
     clean = df[~bad_mask]
 
     if len(quarantined) > 0:
-        quarantined.to_parquet("data/staged/quarantine/fred_mapping.parquet", index=False)
-        logger.info(f"  quarantined {len(quarantined)} rows → data/staged/quarantine/fred_mapping.parquet")
+        quarantined.to_parquet(
+            "data/staged/quarantine/fred_mapping.parquet", index=False
+        )
+        logger.info(
+            f"  quarantined {len(quarantined)} rows → data/staged/quarantine/fred_mapping.parquet"
+        )
     else:
         logger.info("  no rows quarantined — all checks passed at row level")
 
     clean.to_parquet("data/staged/validated/fred_mapping.parquet", index=False)
-    logger.info(f"  validated {len(clean)} rows → data/staged/validated/fred_mapping.parquet")
+    logger.info(
+        f"  validated {len(clean)} rows → data/staged/validated/fred_mapping.parquet"
+    )
 
 
 # =========================================================================================================
@@ -521,4 +594,3 @@ if __name__ == "__main__":
         logger.error(f"pipeline failed: {e}", exc_info=True)
         raise
     logger.info("ge_checkpoint pipeline completed")
-

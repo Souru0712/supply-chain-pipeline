@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: supply-chain-dashboard
+    runtime: python
+    plan: free
+    buildCommand: pip install -r dashboard/requirements.txt
+    startCommand: gunicorn 'dashboard.app:server' --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DASH_DEBUG
+        value: "false"
+    healthCheckPath: /

@@ -48,25 +48,29 @@ REQUEST_TIMEOUT = 10
 SERIES_ID = "DTWEXBGS"
 
 _FREQ_MAP = {
-    "A":  "annual",
+    "A": "annual",
     "SA": "semiannual",
-    "Q":  "quarterly",
-    "M":  "monthly",
+    "Q": "quarterly",
+    "M": "monthly",
     "BW": "biweekly",
-    "W":  "weekly",
-    "D":  "daily",
+    "W": "weekly",
+    "D": "daily",
 }
 
 
 # ---------------------------------------------------------------------------
 # HTTP helper
 # ---------------------------------------------------------------------------
-def _request_with_retry(url: str, params: dict, max_retries: int = 5) -> requests.Response:
+def _request_with_retry(
+    url: str, params: dict, max_retries: int = 5
+) -> requests.Response:
     for attempt in range(max_retries):
         resp = requests.get(url, params=params, timeout=REQUEST_TIMEOUT)
         if resp.status_code in (429, 400):
-            wait = 2 ** attempt
-            print(f"    -> HTTP {resp.status_code} -- backing off {wait}s (attempt {attempt + 1}/{max_retries})")
+            wait = 2**attempt
+            print(
+                f"    -> HTTP {resp.status_code} -- backing off {wait}s (attempt {attempt + 1}/{max_retries})"
+            )
             time.sleep(wait)
             continue
         resp.raise_for_status()
@@ -81,14 +85,14 @@ def _request_with_retry(url: str, params: dict, max_retries: int = 5) -> request
 def fetch_dollar_index() -> pd.DataFrame:
     """Fetch DTWEXBGS observations from 2015-01-01 onward."""
     obs_params = {
-        "series_id":         SERIES_ID,
-        "api_key":           FRED_API_KEY,
-        "file_type":         "json",
+        "series_id": SERIES_ID,
+        "api_key": FRED_API_KEY,
+        "file_type": "json",
         "observation_start": "2015-01-01",
     }
     info_params = {
         "series_id": SERIES_ID,
-        "api_key":   FRED_API_KEY,
+        "api_key": FRED_API_KEY,
         "file_type": "json",
     }
 
@@ -113,7 +117,9 @@ def fetch_dollar_index() -> pd.DataFrame:
     df["ppi"] = df["ppi"].astype(float)
 
     if df.empty:
-        raise RuntimeError(f"Series {SERIES_ID}: zero usable observations after filtering.")
+        raise RuntimeError(
+            f"Series {SERIES_ID}: zero usable observations after filtering."
+        )
 
     df["fred_series_id"] = SERIES_ID
     df["name"] = "dollar_index"
@@ -128,8 +134,7 @@ def fetch_dollar_index() -> pd.DataFrame:
 # Spark transform & write
 # ---------------------------------------------------------------------------
 spark = (
-    SparkSession.builder
-    .appName("supply-chain-pipeline")
+    SparkSession.builder.appName("supply-chain-pipeline")
     .config("spark.driver.memory", "4g")
     .config("spark.sql.shuffle.partitions", "64")
     .getOrCreate()
@@ -138,16 +143,10 @@ spark = (
 
 def transform_and_write(csv_path: str):
     """Read the raw CSV with Spark, cast types, and write staged parquet."""
-    df = (
-        spark.read
-        .option("header", True)
-        .option("inferSchema", True)
-        .csv(csv_path)
-    )
+    df = spark.read.option("header", True).option("inferSchema", True).csv(csv_path)
 
     df = (
-        df
-        .withColumn("fred_series_id", col("fred_series_id").cast(StringType()))
+        df.withColumn("fred_series_id", col("fred_series_id").cast(StringType()))
         .withColumn("ppi", col("ppi").cast(FloatType()))
         .withColumn("ppi_date", col("ppi_date").cast(DateType()))
         .withColumn("ppi_frequency", col("ppi_frequency").cast(StringType()))
@@ -176,7 +175,11 @@ if __name__ == "__main__":
         os.makedirs("data/raw/macroeconomic", exist_ok=True)
         df.to_csv(csv_path, index=False)
         print(f"Wrote {len(df)} rows -> {csv_path}")
-        logger.info("FILE_WRITTEN  source=FRED_dollar_index  rows=%d  path=%s", len(df), csv_path)
+        logger.info(
+            "FILE_WRITTEN  source=FRED_dollar_index  rows=%d  path=%s",
+            len(df),
+            csv_path,
+        )
 
         # spark transform & staged parquet
         transform_and_write(csv_path)

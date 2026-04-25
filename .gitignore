@@ -18,13 +18,17 @@ logs/
 *.duckdb
 *.duckdb.wal
 
-# Data (stored in S3, not git)
-data/
+# Data (stored in S3, not git) — forecast outputs are committed for dashboard
+data/materialized/
+data/staged/
+data/raw/
 starter/
 
-# ML artifacts (regenerable)
+# MLflow run store (regenerable)
 mlruns/
-models/
+
+# Regenerable model files — exclude large binaries but keep XGBoost JSON models
+# models/ is intentionally tracked to ship trained artifacts with the repo
 
 # Great Expectations local artifacts
 gx/uncommitted/

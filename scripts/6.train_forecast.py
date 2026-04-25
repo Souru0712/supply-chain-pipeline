@@ -1,46 +1,46 @@
 """
-Train a 13-week direct multi-output price forecast model.
+Train a 13-week direct multi-output price forecast model using XGBoost.
 
 Design
 ------
-Instead of recursively predicting day-by-day (error compounds), we train one
-LightGBM model per horizon h in 1..13 weeks. Each horizon model learns:
+One XGBoost model per horizon h in 1..13 weeks. Each horizon model learns:
 
     y_{t+h}  =  f_h( features available at time t )
 
-For each horizon we fit three quantile regressors (p10, p50, p90) so the
-dashboard can draw a prediction band, not just a point.
+For each horizon we fit three quantile regressors (p10, p50, p90) using
+XGBoost's reg:quantileerror objective so the dashboard can draw a prediction
+band, not just a point estimate.
 
 Inputs
 ------
 - data/materialized/<INGREDIENT>/training_weekly.parquet
-  (produced by dbt model `mart_corn_training_weekly`)
+  (produced by dbt model `mart_corn_training_weekly`, or by 0.generate_sample_data.py)
 
 Outputs
 -------
-- models/<ingredient>/lgbm_h{h}_q{q}.txt         (26 files: 13 horizons x 2 non-median)
-- models/<ingredient>/lgbm_h{h}.txt               (the median / point model)
-- models/<ingredient>/metadata.json               (features, metrics, train_end_date)
-- mlruns/                                         (local MLflow tracking store)
+- models/<ingredient>/xgb_h{h}_q{q}.json     (26 files: 13 horizons x 2 non-median)
+- models/<ingredient>/xgb_h{h}.json           (the median / point model)
+- models/<ingredient>/metadata.json           (features, metrics, train_end_date)
+- mlruns/                                     (local MLflow tracking store)
 
 Usage
 -----
-    python scripts/6.train_forecast.py                 # defaults to CORN
+    python scripts/6.train_forecast.py                   # defaults to CORN
     python scripts/6.train_forecast.py --ingredient CORN --horizons 13
 """
+
 from __future__ import annotations
 
 import argparse
 import json
-import os
 import warnings
 from pathlib import Path
 from typing import Sequence
 
-import lightgbm as lgb
 import mlflow
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
 from sklearn.model_selection import TimeSeriesSplit
 
@@ -58,7 +58,7 @@ TARGET = "price_avg_weekly"
 DATE_COL = "week_start"
 CROSS_FFILL_COLS = ["di_ppi", "macro_ppi"]
 QUANTILES = (0.1, 0.5, 0.9)
-MIN_ROWS_FOR_FIT = 60   # ~1 year of weekly data
+MIN_ROWS_FOR_FIT = 60  # ~1 year of weekly data
 
 
 # ---------------------------------------------------------------------------
@@ -68,15 +68,17 @@ def load_training_frame(ingredient: str) -> pd.DataFrame:
     path = MATERIALIZED / ingredient / "training_weekly.parquet"
     if not path.exists():
         raise FileNotFoundError(
-            f"{path} not found. Run `dbt run --select mart_corn_training_weekly` first."
+            f"{path} not found.\n"
+            "Run `python scripts/0.generate_sample_data.py` or "
+            "`dbt run --select mart_corn_training_weekly` first."
         )
 
     df = pd.read_parquet(path)
     df[DATE_COL] = pd.to_datetime(df[DATE_COL])
     df = df.sort_values(DATE_COL).reset_index(drop=True)
 
-    # Forward-fill cross features — macro PPI is monthly, dollar index is
-    # daily-but-gappy. Only ffill; no bfill so we never use future info.
+    # Forward-fill cross features: macro PPI is monthly, dollar index is gappy.
+    # Only ffill; no bfill so we never leak future information.
     for col in CROSS_FFILL_COLS:
         if col in df.columns:
             df[col] = df[col].ffill()
@@ -85,7 +87,7 @@ def load_training_frame(ingredient: str) -> pd.DataFrame:
 
 
 def build_horizon_targets(df: pd.DataFrame, horizons: Sequence[int]) -> pd.DataFrame:
-    """Attach y_h columns (h weeks ahead)."""
+    """Attach y_h columns (h weeks ahead price targets)."""
     df = df.copy()
     for h in horizons:
         df[f"y_h{h}"] = df[TARGET].shift(-h)
@@ -93,28 +95,28 @@ def build_horizon_targets(df: pd.DataFrame, horizons: Sequence[int]) -> pd.DataF
 
 
 def select_feature_columns(df: pd.DataFrame, horizons: Sequence[int]) -> list[str]:
-    """Every column except date, target-family, and future horizon targets."""
+    """Every numeric column except the date and the future horizon targets."""
     drop = {DATE_COL, *(f"y_h{h}" for h in horizons)}
-    # price_avg_weekly is allowed as a feature (value at time t, not future)
-    return [c for c in df.columns if c not in drop and pd.api.types.is_numeric_dtype(df[c])]
+    return [
+        c for c in df.columns if c not in drop and pd.api.types.is_numeric_dtype(df[c])
+    ]
 
 
 # ---------------------------------------------------------------------------
-# Training
+# Model helpers
 # ---------------------------------------------------------------------------
-def lgbm_params(quantile: float) -> dict:
+def xgb_params(quantile: float) -> dict:
     return {
-        "objective": "quantile",
-        "alpha": quantile,
+        "objective": "reg:quantileerror",
+        "quantile_alpha": quantile,
         "learning_rate": 0.05,
-        "num_leaves": 31,
-        "max_depth": -1,
-        "min_data_in_leaf": 10,
-        "feature_fraction": 0.9,
-        "bagging_fraction": 0.9,
-        "bagging_freq": 5,
-        "verbose": -1,
-        "random_state": 42,
+        "max_depth": 5,
+        "min_child_weight": 10,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "tree_method": "hist",
+        "seed": 42,
+        "verbosity": 0,
     }
 
 
@@ -124,21 +126,22 @@ def cv_metrics(
     params: dict,
     n_splits: int = 5,
 ) -> dict[str, float]:
-    """Time-series CV. Returns mean MAE / RMSE / MAPE for the given params."""
+    """Time-series CV returning mean MAE / RMSE / MAPE."""
     tscv = TimeSeriesSplit(n_splits=n_splits)
     maes, rmses, mapes = [], [], []
 
     for train_idx, test_idx in tscv.split(X):
-        dtrain = lgb.Dataset(X[train_idx], label=y[train_idx])
-        dtest = lgb.Dataset(X[test_idx], label=y[test_idx], reference=dtrain)
-        booster = lgb.train(
+        dtrain = xgb.DMatrix(X[train_idx], label=y[train_idx])
+        dtest = xgb.DMatrix(X[test_idx], label=y[test_idx])
+        booster = xgb.train(
             params,
             dtrain,
             num_boost_round=600,
-            valid_sets=[dtest],
-            callbacks=[lgb.early_stopping(50, verbose=False)],
+            evals=[(dtest, "val")],
+            early_stopping_rounds=50,
+            verbose_eval=False,
         )
-        preds = booster.predict(X[test_idx])
+        preds = booster.predict(dtest)
         maes.append(mean_absolute_error(y[test_idx], preds))
         rmses.append(float(np.sqrt(np.mean((y[test_idx] - preds) ** 2))))
         mapes.append(mean_absolute_percentage_error(y[test_idx], preds))
@@ -151,42 +154,48 @@ def cv_metrics(
 
 
 def naive_baseline_mae(df: pd.DataFrame, horizon: int, n_splits: int = 5) -> float:
-    """Naive forecast: y_{t+h} = y_t. Mean MAE on the same CV folds."""
+    """Naive forecast (y_{t+h} = y_t) mean MAE over the same CV folds."""
     valid = df.dropna(subset=[TARGET, f"y_h{horizon}"])
     y = valid[f"y_h{horizon}"].to_numpy()
-    y_pred = valid[TARGET].to_numpy()
+    y_naive = valid[TARGET].to_numpy()
 
     tscv = TimeSeriesSplit(n_splits=n_splits)
     maes = []
     for _, test_idx in tscv.split(y):
-        maes.append(mean_absolute_error(y[test_idx], y_pred[test_idx]))
+        maes.append(mean_absolute_error(y[test_idx], y_naive[test_idx]))
     return float(np.mean(maes))
 
 
-def fit_final(X: np.ndarray, y: np.ndarray, params: dict) -> lgb.Booster:
-    """Refit on the full series with a held-out tail for early stopping."""
+def fit_final(X: np.ndarray, y: np.ndarray, params: dict) -> xgb.Booster:
+    """Refit on the full series using a held-out tail for early stopping."""
     cut = int(len(X) * 0.85)
-    dtrain = lgb.Dataset(X[:cut], label=y[:cut])
-    dval = lgb.Dataset(X[cut:], label=y[cut:], reference=dtrain)
-    return lgb.train(
+    dtrain = xgb.DMatrix(X[:cut], label=y[:cut])
+    dval = xgb.DMatrix(X[cut:], label=y[cut:])
+    return xgb.train(
         params,
         dtrain,
         num_boost_round=800,
-        valid_sets=[dval],
-        callbacks=[lgb.early_stopping(50, verbose=False)],
+        evals=[(dval, "val")],
+        early_stopping_rounds=50,
+        verbose_eval=False,
     )
 
 
+# ---------------------------------------------------------------------------
+# Per-horizon training
+# ---------------------------------------------------------------------------
 def train_horizon(
     df: pd.DataFrame,
     horizon: int,
     feature_cols: list[str],
     out_dir: Path,
 ) -> dict:
-    """Train the p10 / p50 / p90 models for one horizon. Returns a metrics dict."""
+    """Train p10/p50/p90 XGBoost models for one horizon. Returns metrics dict."""
     target_col = f"y_h{horizon}"
     valid = df.dropna(subset=feature_cols + [target_col])
-    valid = valid.replace([np.inf, -np.inf], np.nan).dropna(subset=feature_cols + [target_col])
+    valid = valid.replace([np.inf, -np.inf], np.nan).dropna(
+        subset=feature_cols + [target_col]
+    )
 
     if len(valid) < MIN_ROWS_FOR_FIT:
         print(f"  h={horizon:>2}: SKIP — only {len(valid)} usable rows")
@@ -197,15 +206,15 @@ def train_horizon(
 
     baseline_mae = naive_baseline_mae(df, horizon)
 
-    quantile_metrics = {}
+    quantile_metrics: dict[str, dict[str, float]] = {}
     for q in QUANTILES:
-        params = lgbm_params(q)
+        params = xgb_params(q)
         metrics = cv_metrics(X, y, params)
         quantile_metrics[f"q{int(q * 100)}"] = metrics
 
         final_model = fit_final(X, y, params)
         suffix = "" if q == 0.5 else f"_q{int(q * 100)}"
-        final_model.save_model(str(out_dir / f"lgbm_h{horizon}{suffix}.txt"))
+        final_model.save_model(str(out_dir / f"xgb_h{horizon}{suffix}.json"))
 
     median = quantile_metrics["q50"]
     skill = 1 - (median["mae"] / baseline_mae) if baseline_mae > 0 else float("nan")
@@ -216,7 +225,6 @@ def train_horizon(
         f"skill={skill:+.2%}"
     )
 
-    # MLflow per-horizon run
     with mlflow.start_run(run_name=f"horizon_{horizon}", nested=True):
         mlflow.log_param("horizon_weeks", horizon)
         mlflow.log_param("n_rows", len(valid))
@@ -228,7 +236,7 @@ def train_horizon(
         mlflow.log_metric("skill_vs_naive", skill)
         for q_key, m in quantile_metrics.items():
             mlflow.log_metric(f"{q_key}_mae", m["mae"])
-        mlflow.log_artifact(str(out_dir / f"lgbm_h{horizon}.txt"))
+        mlflow.log_artifact(str(out_dir / f"xgb_h{horizon}.json"))
 
     return {
         "horizon": horizon,
@@ -244,8 +252,14 @@ def train_horizon(
 # ---------------------------------------------------------------------------
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--ingredient", default="CORN", help="Ingredient folder name under data/materialized/")
-    parser.add_argument("--horizons", type=int, default=13, help="Max horizon in weeks (1..N)")
+    parser.add_argument(
+        "--ingredient",
+        default="CORN",
+        help="Ingredient folder under data/materialized/",
+    )
+    parser.add_argument(
+        "--horizons", type=int, default=13, help="Max horizon in weeks (1..N)"
+    )
     args = parser.parse_args()
 
     ingredient = args.ingredient.upper()
@@ -257,7 +271,7 @@ def main() -> None:
     mlflow.set_tracking_uri(f"file:{MLFLOW_DIR.as_posix()}")
     mlflow.set_experiment(f"price_forecast_{ingredient.lower()}")
 
-    print(f"=== Training {ingredient} · horizons 1..{horizons[-1]} weeks ===")
+    print(f"=== Training {ingredient} · horizons 1..{horizons[-1]} weeks (XGBoost) ===")
     df = load_training_frame(ingredient)
     df = build_horizon_targets(df, horizons)
     feature_cols = select_feature_columns(df, horizons)
@@ -265,6 +279,7 @@ def main() -> None:
 
     with mlflow.start_run(run_name=f"{ingredient}_multihorizon"):
         mlflow.log_param("ingredient", ingredient)
+        mlflow.log_param("model_type", "xgboost")
         mlflow.log_param("max_horizon_weeks", horizons[-1])
         mlflow.log_param("quantiles", list(QUANTILES))
         mlflow.log_param("target", TARGET)
@@ -287,6 +302,7 @@ def main() -> None:
 
     metadata = {
         "ingredient": ingredient,
+        "model_type": "xgboost",
         "target": TARGET,
         "features": feature_cols,
         "horizons_weeks": horizons,
