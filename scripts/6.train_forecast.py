@@ -267,7 +267,9 @@ def main() -> None:
     mlflow.set_tracking_uri(f"file:{MLFLOW_DIR.as_posix()}")
     mlflow.set_experiment(f"price_forecast_{ingredient.lower()}")
 
-    print(f"=== Training {ingredient} · horizons 1..{horizons[-1]} weeks (LightGBM) ===")
+    print(
+        f"=== Training {ingredient} · horizons 1..{horizons[-1]} weeks (LightGBM) ==="
+    )
     df = load_training_frame(ingredient)
     df = build_horizon_targets(df, horizons)
     feature_cols = select_feature_columns(df, horizons)
