@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
 import pytest
-import xgboost as xgb
 
 
 # ---------------------------------------------------------------------------
@@ -22,7 +22,6 @@ def test_load_metadata_raises_on_missing(inference_module):
 
 
 def test_load_metadata_returns_dict(inference_module, tmp_path, monkeypatch):
-    # Patch MODELS_DIR to point at a temp directory
     ingredient_dir = tmp_path / "testingredient"
     ingredient_dir.mkdir()
     meta = {
@@ -49,23 +48,23 @@ def test_load_models_empty_when_no_files(inference_module, tmp_path, monkeypatch
     assert models == {}
 
 
-def test_load_models_loads_existing_json(inference_module, tmp_path, monkeypatch):
+def test_load_models_loads_existing_txt(inference_module, tmp_path, monkeypatch):
     ingredient_dir = tmp_path / "testingredient"
     ingredient_dir.mkdir()
 
-    # Train and save a tiny booster
+    # Train and save a tiny LightGBM booster
     rng = np.random.default_rng(99)
     X = rng.standard_normal((60, 3)).astype(np.float32)
     y = X[:, 0].astype(np.float32)
-    params = {"objective": "reg:quantileerror", "quantile_alpha": 0.5, "verbosity": 0}
-    dtrain = xgb.DMatrix(X, label=y)
-    booster = xgb.train(params, dtrain, num_boost_round=5)
-    booster.save_model(str(ingredient_dir / "xgb_h1.json"))
+    params = {"objective": "quantile", "alpha": 0.5, "verbosity": -1}
+    dtrain = lgb.Dataset(X, label=y)
+    booster = lgb.train(params, dtrain, num_boost_round=5)
+    booster.save_model(str(ingredient_dir / "lgb_h1.txt"))
 
     monkeypatch.setattr(inference_module, "MODELS_DIR", tmp_path)
     models = inference_module.load_models("TESTINGREDIENT", [1])
     assert "h1_q50" in models
-    assert isinstance(models["h1_q50"], xgb.Booster)
+    assert isinstance(models["h1_q50"], lgb.Booster)
 
 
 # ---------------------------------------------------------------------------
