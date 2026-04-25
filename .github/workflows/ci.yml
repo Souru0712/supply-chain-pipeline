@@ -26,7 +26,7 @@ jobs:
             ruff==0.4.10 \
             mypy==1.10.0 \
             pytest==8.2.2 \
-            xgboost>=2.0 \
+            lightgbm>=4.0 \
             pandas>=2.0 \
             numpy>=1.26 \
             scikit-learn>=1.3 \
