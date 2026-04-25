@@ -16,10 +16,8 @@ import great_expectations as gx
 from great_expectations.expectations import (
     ExpectColumnValuesToNotBeNull,
     ExpectColumnValuesToBeOfType,
-    ExpectColumnValuesToBeUnique,
     ExpectCompoundColumnsToBeUnique,
     ExpectColumnValuesToMatchRegex,
-    ExpectColumnValuesToNotMatchRegex,
 )
 
 os.makedirs("logs", exist_ok=True)
