@@ -18,31 +18,35 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def sample_weekly_df():
     rng = np.random.default_rng(0)
     dates = pd.date_range("2020-01-06", periods=200, freq="W-MON")
     prices = 5.0 + np.cumsum(rng.normal(0, 0.05, 200))
     prices = np.clip(prices, 2.0, 10.0)
-    return pd.DataFrame({
-        "week_start": dates,
-        "price_avg_weekly": prices,
-        "price_min_weekly": prices - 0.1,
-        "price_max_weekly": prices + 0.1,
-        "macro_ppi": 220.0 + rng.normal(0, 2, 200),
-        "di_ppi": 100.0 + rng.normal(0, 1, 200),
-        "week_of_year": dates.isocalendar().week.astype(int).values,
-        "price_lag_1w": np.concatenate([[np.nan], prices[:-1]]),
-        "price_lag_4w": np.concatenate([[np.nan]*4, prices[:-4]]),
-        "price_hist_avg_4w": pd.Series(prices).rolling(4).mean().values,
-        "price_hist_avg_12w": pd.Series(prices).rolling(12).mean().values,
-        "price_hist_avg_52w": pd.Series(prices).rolling(52).mean().values,
-    })
+    return pd.DataFrame(
+        {
+            "week_start": dates,
+            "price_avg_weekly": prices,
+            "price_min_weekly": prices - 0.1,
+            "price_max_weekly": prices + 0.1,
+            "macro_ppi": 220.0 + rng.normal(0, 2, 200),
+            "di_ppi": 100.0 + rng.normal(0, 1, 200),
+            "week_of_year": dates.isocalendar().week.astype(int).values,
+            "price_lag_1w": np.concatenate([[np.nan], prices[:-1]]),
+            "price_lag_4w": np.concatenate([[np.nan] * 4, prices[:-4]]),
+            "price_hist_avg_4w": pd.Series(prices).rolling(4).mean().values,
+            "price_hist_avg_12w": pd.Series(prices).rolling(12).mean().values,
+            "price_hist_avg_52w": pd.Series(prices).rolling(52).mean().values,
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
 # Script 9 — Margin model
 # ---------------------------------------------------------------------------
+
 
 def test_margin_transport_cost_positive():
     spec = importlib.util.spec_from_file_location(
@@ -88,6 +92,7 @@ def test_margin_build_cost_stack_columns(sample_weekly_df):
 # Script 10 — Disruption score
 # ---------------------------------------------------------------------------
 
+
 def test_disruption_score_range(sample_weekly_df):
     spec = importlib.util.spec_from_file_location(
         "disruption", REPO_ROOT / "scripts" / "10.disruption_score.py"
@@ -119,6 +124,7 @@ def test_disruption_alert_levels():
 # ---------------------------------------------------------------------------
 # Script 11 — Procurement optimizer
 # ---------------------------------------------------------------------------
+
 
 def test_procurement_seasonal_curve_keys(sample_weekly_df):
     spec = importlib.util.spec_from_file_location(
@@ -158,6 +164,7 @@ def test_procurement_lp_sums_to_volume(sample_weekly_df):
 # ---------------------------------------------------------------------------
 # Script 12 — Risk score
 # ---------------------------------------------------------------------------
+
 
 def test_risk_score_range(sample_weekly_df):
     spec = importlib.util.spec_from_file_location(
