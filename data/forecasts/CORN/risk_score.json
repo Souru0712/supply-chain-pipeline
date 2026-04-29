@@ -1,0 +1,59 @@
+{
+  "ingredient": "CORN",
+  "as_of": "2025-12-08",
+  "composite_risk": 51.72,
+  "classification": {
+    "level": "MODERATE",
+    "color": "#f57c00",
+    "action": "Active monitoring",
+    "score": 51.7
+  },
+  "dimensions": {
+    "supply_risk": 8.7,
+    "cost_risk": 85.65,
+    "logistics_risk": 55.81,
+    "demand_risk": 61.29
+  },
+  "weights": {
+    "supply_risk": 0.3,
+    "cost_risk": 0.3,
+    "logistics_risk": 0.2,
+    "demand_risk": 0.2
+  },
+  "12w_trend": [
+    60.61,
+    59.62,
+    53.16,
+    51.77,
+    49.26,
+    47.71,
+    46.64,
+    45.04,
+    42.82,
+    41.22,
+    52.78,
+    51.72
+  ],
+  "radar": [
+    {
+      "dimension": "supply_risk",
+      "score": 8.7,
+      "weight": 0.3
+    },
+    {
+      "dimension": "cost_risk",
+      "score": 85.65,
+      "weight": 0.3
+    },
+    {
+      "dimension": "logistics_risk",
+      "score": 55.81,
+      "weight": 0.2
+    },
+    {
+      "dimension": "demand_risk",
+      "score": 61.29,
+      "weight": 0.2
+    }
+  ]
+}

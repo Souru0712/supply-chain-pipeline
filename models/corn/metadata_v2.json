@@ -1,0 +1,339 @@
+{
+  "ingredient": "CORN",
+  "model_type": "lightgbm_v2",
+  "target": "price_avg_weekly",
+  "features": [
+    "price_avg_weekly",
+    "price_min_weekly",
+    "price_max_weekly",
+    "n_reports_in_week",
+    "price_lag_1w",
+    "price_lag_2w",
+    "price_lag_4w",
+    "price_lag_8w",
+    "price_lag_13w",
+    "price_lag_26w",
+    "price_lag_52w",
+    "price_hist_avg_4w",
+    "price_hist_avg_12w",
+    "price_hist_avg_26w",
+    "price_hist_avg_52w",
+    "price_hist_std_12w",
+    "di_ppi",
+    "macro_ppi",
+    "year",
+    "week_of_year",
+    "month",
+    "quarter"
+  ],
+  "horizons_weeks": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13
+  ],
+  "quantiles": [
+    0.1,
+    0.5,
+    0.9
+  ],
+  "train_end_date": "2025-12-08T00:00:00",
+  "n_training_rows": 310,
+  "per_horizon": [
+    {
+      "horizon": 1,
+      "n_rows": 257,
+      "n_features": 22,
+      "quantiles": {
+        "q10": {
+          "mae": 0.13566878737267848,
+          "mape": 0.026858672416271944,
+          "directional_accuracy": 0.7
+        },
+        "q50": {
+          "mae": 0.0826060752001685,
+          "mape": 0.016228433163632573,
+          "directional_accuracy": 0.7238095238095238
+        },
+        "q90": {
+          "mae": 0.08233685895461496,
+          "mape": 0.01692506059441097,
+          "directional_accuracy": 0.5380952380952382
+        }
+      }
+    },
+    {
+      "horizon": 2,
+      "n_rows": 256,
+      "n_features": 21,
+      "quantiles": {
+        "q10": {
+          "mae": 0.15872204565451073,
+          "mape": 0.031420432986808286,
+          "directional_accuracy": 0.6904761904761905
+        },
+        "q50": {
+          "mae": 0.09817782126772964,
+          "mape": 0.019237025637116,
+          "directional_accuracy": 0.7666666666666668
+        },
+        "q90": {
+          "mae": 0.15552368927718235,
+          "mape": 0.03225496386457389,
+          "directional_accuracy": 0.5
+        }
+      }
+    },
+    {
+      "horizon": 3,
+      "n_rows": 255,
+      "n_features": 20,
+      "quantiles": {
+        "q10": {
+          "mae": 0.14110071419060094,
+          "mape": 0.027805062340921904,
+          "directional_accuracy": 0.7523809523809524
+        },
+        "q50": {
+          "mae": 0.12171028522222929,
+          "mape": 0.02394478897788289,
+          "directional_accuracy": 0.7904761904761906
+        },
+        "q90": {
+          "mae": 0.1822321006652447,
+          "mape": 0.03770172944073323,
+          "directional_accuracy": 0.5047619047619047
+        }
+      }
+    },
+    {
+      "horizon": 4,
+      "n_rows": 254,
+      "n_features": 20,
+      "quantiles": {
+        "q10": {
+          "mae": 0.18527645955934768,
+          "mape": 0.03663999566278073,
+          "directional_accuracy": 0.7761904761904762
+        },
+        "q50": {
+          "mae": 0.13563669817410004,
+          "mape": 0.02677745262152121,
+          "directional_accuracy": 0.8047619047619048
+        },
+        "q90": {
+          "mae": 0.21213704910578524,
+          "mape": 0.043958894428304106,
+          "directional_accuracy": 0.5047619047619047
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "n_rows": 253,
+      "n_features": 18,
+      "quantiles": {
+        "q10": {
+          "mae": 0.20304025025777825,
+          "mape": 0.03987734709154747,
+          "directional_accuracy": 0.7428571428571428
+        },
+        "q50": {
+          "mae": 0.13962314070895587,
+          "mape": 0.027497861007088426,
+          "directional_accuracy": 0.8619047619047618
+        },
+        "q90": {
+          "mae": 0.22961447607768268,
+          "mape": 0.0475854728713664,
+          "directional_accuracy": 0.5714285714285714
+        }
+      }
+    },
+    {
+      "horizon": 6,
+      "n_rows": 252,
+      "n_features": 18,
+      "quantiles": {
+        "q10": {
+          "mae": 0.1922860801968993,
+          "mape": 0.03754086947182768,
+          "directional_accuracy": 0.8238095238095239
+        },
+        "q50": {
+          "mae": 0.1451572589145001,
+          "mape": 0.028411299938096296,
+          "directional_accuracy": 0.9
+        },
+        "q90": {
+          "mae": 0.24040637986715216,
+          "mape": 0.04981475178371434,
+          "directional_accuracy": 0.6476190476190476
+        }
+      }
+    },
+    {
+      "horizon": 7,
+      "n_rows": 251,
+      "n_features": 18,
+      "quantiles": {
+        "q10": {
+          "mae": 0.1962240419880807,
+          "mape": 0.038045214074170434,
+          "directional_accuracy": 0.8292682926829269
+        },
+        "q50": {
+          "mae": 0.15714942257146336,
+          "mape": 0.03056881139231683,
+          "directional_accuracy": 0.902439024390244
+        },
+        "q90": {
+          "mae": 0.21627338770536494,
+          "mape": 0.044635732686841414,
+          "directional_accuracy": 0.6390243902439025
+        }
+      }
+    },
+    {
+      "horizon": 8,
+      "n_rows": 250,
+      "n_features": 18,
+      "quantiles": {
+        "q10": {
+          "mae": 0.2093652715372169,
+          "mape": 0.040518510670858605,
+          "directional_accuracy": 0.7853658536585366
+        },
+        "q50": {
+          "mae": 0.16293962387698777,
+          "mape": 0.03165141818018335,
+          "directional_accuracy": 0.9024390243902438
+        },
+        "q90": {
+          "mae": 0.23278369451631012,
+          "mape": 0.048044180799105544,
+          "directional_accuracy": 0.6585365853658536
+        }
+      }
+    },
+    {
+      "horizon": 9,
+      "n_rows": 249,
+      "n_features": 17,
+      "quantiles": {
+        "q10": {
+          "mae": 0.24017498568439963,
+          "mape": 0.04648685061342803,
+          "directional_accuracy": 0.7853658536585366
+        },
+        "q50": {
+          "mae": 0.16518391327246026,
+          "mape": 0.032149512753957346,
+          "directional_accuracy": 0.9121951219512194
+        },
+        "q90": {
+          "mae": 0.28225823690742285,
+          "mape": 0.0583797420411433,
+          "directional_accuracy": 0.5658536585365854
+        }
+      }
+    },
+    {
+      "horizon": 10,
+      "n_rows": 248,
+      "n_features": 17,
+      "quantiles": {
+        "q10": {
+          "mae": 0.23414860905368054,
+          "mape": 0.04513441955987215,
+          "directional_accuracy": 0.8292682926829269
+        },
+        "q50": {
+          "mae": 0.18168721141495492,
+          "mape": 0.035372984024173576,
+          "directional_accuracy": 0.902439024390244
+        },
+        "q90": {
+          "mae": 0.2795300210885208,
+          "mape": 0.057719066703592656,
+          "directional_accuracy": 0.5902439024390244
+        }
+      }
+    },
+    {
+      "horizon": 11,
+      "n_rows": 247,
+      "n_features": 17,
+      "quantiles": {
+        "q10": {
+          "mae": 0.24645208316372064,
+          "mape": 0.04743584432688079,
+          "directional_accuracy": 0.8439024390243903
+        },
+        "q50": {
+          "mae": 0.19909866884919888,
+          "mape": 0.038784253206918286,
+          "directional_accuracy": 0.9121951219512197
+        },
+        "q90": {
+          "mae": 0.24298123287644394,
+          "mape": 0.050217707810924564,
+          "directional_accuracy": 0.6878048780487804
+        }
+      }
+    },
+    {
+      "horizon": 12,
+      "n_rows": 246,
+      "n_features": 17,
+      "quantiles": {
+        "q10": {
+          "mae": 0.24685277072143838,
+          "mape": 0.04748942037679439,
+          "directional_accuracy": 0.8682926829268294
+        },
+        "q50": {
+          "mae": 0.18566660900087528,
+          "mape": 0.03630328878100691,
+          "directional_accuracy": 0.9170731707317075
+        },
+        "q90": {
+          "mae": 0.2368302489168609,
+          "mape": 0.0488507182187234,
+          "directional_accuracy": 0.7024390243902439
+        }
+      }
+    },
+    {
+      "horizon": 13,
+      "n_rows": 245,
+      "n_features": 15,
+      "quantiles": {
+        "q10": {
+          "mae": 0.2250067828831611,
+          "mape": 0.04330193896850041,
+          "directional_accuracy": 0.9
+        },
+        "q50": {
+          "mae": 0.15867716001413165,
+          "mape": 0.031045414744238813,
+          "directional_accuracy": 0.945
+        },
+        "q90": {
+          "mae": 0.23705909795820707,
+          "mape": 0.04906705499693799,
+          "directional_accuracy": 0.7250000000000001
+        }
+      }
+    }
+  ]
+}

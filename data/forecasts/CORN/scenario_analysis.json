@@ -1,0 +1,83 @@
+{
+  "base_tlc": 5.6455,
+  "scenarios": {
+    "diesel": [
+      {
+        "shock_pct": -20,
+        "delta_tlc": -0.0234,
+        "delta_pct": -0.41
+      },
+      {
+        "shock_pct": -10,
+        "delta_tlc": -0.0117,
+        "delta_pct": -0.21
+      },
+      {
+        "shock_pct": 10,
+        "delta_tlc": 0.0117,
+        "delta_pct": 0.21
+      },
+      {
+        "shock_pct": 20,
+        "delta_tlc": 0.0234,
+        "delta_pct": 0.41
+      }
+    ],
+    "nat_gas": [
+      {
+        "shock_pct": -20,
+        "delta_tlc": -0.0014,
+        "delta_pct": -0.02
+      },
+      {
+        "shock_pct": -10,
+        "delta_tlc": -0.0007,
+        "delta_pct": -0.01
+      },
+      {
+        "shock_pct": 10,
+        "delta_tlc": 0.0007,
+        "delta_pct": 0.01
+      },
+      {
+        "shock_pct": 20,
+        "delta_tlc": 0.0014,
+        "delta_pct": 0.02
+      }
+    ],
+    "fed_funds": [
+      {
+        "shock_pct": -50,
+        "delta_tlc": -0.0021,
+        "delta_pct": -0.04
+      },
+      {
+        "shock_pct": -25,
+        "delta_tlc": -0.001,
+        "delta_pct": -0.02
+      },
+      {
+        "shock_pct": 25,
+        "delta_tlc": 0.001,
+        "delta_pct": 0.02
+      },
+      {
+        "shock_pct": 50,
+        "delta_tlc": 0.0021,
+        "delta_pct": 0.04
+      }
+    ],
+    "miles": [
+      {
+        "shock_pct": -20,
+        "delta_tlc": -0.1234,
+        "delta_pct": -2.19
+      },
+      {
+        "shock_pct": 20,
+        "delta_tlc": 0.1234,
+        "delta_pct": 2.19
+      }
+    ]
+  }
+}
