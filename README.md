@@ -149,6 +149,7 @@ supply-chain-pipeline/
 ### Step 1 — Prerequisites
 
 ```bash
+# Python 3.11
 git clone https://github.com/souru0712/supply-chain-pipeline.git
 cd supply-chain-pipeline
 pip install -r requirements.txt
