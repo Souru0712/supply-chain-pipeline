@@ -806,7 +806,7 @@ def build_procurement_tab() -> html.Div:
 
         # Opportunistic weeks
         opp = (
-            sched[sched["opportunistic_flag"] == True]
+            sched[sched["opportunistic_flag"]]
             if "opportunistic_flag" in sched.columns
             else pd.DataFrame()
         )  # noqa
