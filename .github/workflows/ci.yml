@@ -33,7 +33,10 @@ jobs:
             mlflow>=2.0 \
             pyarrow>=14.0 \
             dash>=2.17 \
-            plotly>=5.22
+            plotly>=5.22 \
+            statsmodels>=0.14.0 \
+            scipy>=1.11.0 \
+            shap>=0.44.0
 
       # ── Lint ───────────────────────────────────────────────────────────────
       - name: Ruff — lint scripts
