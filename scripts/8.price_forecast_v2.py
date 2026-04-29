@@ -283,7 +283,7 @@ def main() -> None:
         shap_df["mean_importance"] = shap_df.mean(axis=1)
         shap_df = shap_df.sort_values("mean_importance", ascending=False)
         shap_df.to_parquet(forecast_dir / "shap_summary.parquet")
-        print(f"\nTop 5 features by mean |SHAP|:")
+        print("\nTop 5 features by mean |SHAP|:")
         for feat, val in shap_df["mean_importance"].head(5).items():
             print(f"  {feat:<35} {val:.6f}")
 

@@ -33,7 +33,6 @@ import json
 import warnings
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -162,7 +161,6 @@ def apply_forecast(
     params: dict,
 ) -> pd.DataFrame:
     """Extend the cost stack into the forecast horizon."""
-    last_row = hist_stack.iloc[-1]
     rows = []
     for _, fc_row in forecast_df.iterrows():
         for quantile_col, price_col in [("p10", "p10"), ("p50", "p50"), ("p90", "p90")]:
@@ -289,7 +287,7 @@ def main() -> None:
     hist_stack = build_cost_stack(hist_df, params)
     recent = hist_stack.tail(52)
 
-    print(f"  Historical cost stack (last 52 weeks):")
+    print("  Historical cost stack (last 52 weeks):")
     print(f"    Avg commodity price:    ${recent['price_avg_weekly'].mean():.4f}/bu")
     print(f"    Avg transport cost:     ${recent['transport_cost'].mean():.4f}/bu")
     print(f"    Avg energy cost:        ${recent['energy_cost'].mean():.4f}/bu")
@@ -304,7 +302,7 @@ def main() -> None:
         fc_df = pd.read_parquet(forecast_path)
         fc_df["target_week_start"] = pd.to_datetime(fc_df["target_week_start"])
         forecast_stack = apply_forecast(hist_stack, fc_df, params)
-        print(f"\n  Forecast horizon cost projections (p50):")
+        print("\n  Forecast horizon cost projections (p50):")
         p50_fc = forecast_stack[forecast_stack["quantile"] == "p50"]
         for _, row in p50_fc.head(4).iterrows():
             print(

@@ -34,7 +34,6 @@ import json
 import warnings
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -197,7 +196,7 @@ def main() -> None:
     print(f"  Alert level:        {alert['level']}")
     print(f"  Action:             {alert['action']}")
     print()
-    print(f"  Component scores:")
+    print("  Component scores:")
     for component in ["score_supply_deviation", "score_price_gap",
                       "score_price_momentum", "score_volatility_spike"]:
         print(f"    {component:<30} {float(current[component]):.1f}")

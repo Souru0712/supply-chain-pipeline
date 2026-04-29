@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-import json
+import importlib.util
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -44,7 +45,6 @@ def sample_weekly_df():
 # ---------------------------------------------------------------------------
 
 def test_margin_transport_cost_positive():
-    import importlib.util, sys
     spec = importlib.util.spec_from_file_location(
         "margin_model", REPO_ROOT / "scripts" / "9.margin_model.py"
     )
@@ -58,7 +58,6 @@ def test_margin_transport_cost_positive():
 
 
 def test_margin_carry_cost_scales_with_rate():
-    import importlib.util, sys
     spec = importlib.util.spec_from_file_location(
         "margin_model2", REPO_ROOT / "scripts" / "9.margin_model.py"
     )
@@ -72,7 +71,6 @@ def test_margin_carry_cost_scales_with_rate():
 
 
 def test_margin_build_cost_stack_columns(sample_weekly_df):
-    import importlib.util, sys
     spec = importlib.util.spec_from_file_location(
         "margin_model3", REPO_ROOT / "scripts" / "9.margin_model.py"
     )
@@ -91,7 +89,6 @@ def test_margin_build_cost_stack_columns(sample_weekly_df):
 # ---------------------------------------------------------------------------
 
 def test_disruption_score_range(sample_weekly_df):
-    import importlib.util, sys
     spec = importlib.util.spec_from_file_location(
         "disruption", REPO_ROOT / "scripts" / "10.disruption_score.py"
     )
@@ -106,7 +103,6 @@ def test_disruption_score_range(sample_weekly_df):
 
 
 def test_disruption_alert_levels():
-    import importlib.util, sys
     spec = importlib.util.spec_from_file_location(
         "disruption2", REPO_ROOT / "scripts" / "10.disruption_score.py"
     )
@@ -125,7 +121,6 @@ def test_disruption_alert_levels():
 # ---------------------------------------------------------------------------
 
 def test_procurement_seasonal_curve_keys(sample_weekly_df):
-    import importlib.util, sys
     spec = importlib.util.spec_from_file_location(
         "procurement", REPO_ROOT / "scripts" / "11.procurement_optimizer.py"
     )
@@ -140,7 +135,6 @@ def test_procurement_seasonal_curve_keys(sample_weekly_df):
 
 
 def test_procurement_lp_sums_to_volume(sample_weekly_df):
-    import importlib.util, sys
     spec = importlib.util.spec_from_file_location(
         "procurement2", REPO_ROOT / "scripts" / "11.procurement_optimizer.py"
     )
@@ -166,7 +160,6 @@ def test_procurement_lp_sums_to_volume(sample_weekly_df):
 # ---------------------------------------------------------------------------
 
 def test_risk_score_range(sample_weekly_df):
-    import importlib.util, sys
     spec = importlib.util.spec_from_file_location(
         "risk_score", REPO_ROOT / "scripts" / "12.risk_score.py"
     )
@@ -182,7 +175,6 @@ def test_risk_score_range(sample_weekly_df):
 
 
 def test_risk_classify():
-    import importlib.util, sys
     spec = importlib.util.spec_from_file_location(
         "risk_score2", REPO_ROOT / "scripts" / "12.risk_score.py"
     )

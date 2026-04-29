@@ -37,7 +37,6 @@ import json
 import warnings
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from scipy.stats import percentileofscore
 
@@ -240,7 +239,7 @@ def main() -> None:
     print(f"  Composite risk:      {composite:.1f} / 100  [{classification['level']}]")
     print(f"  Action:              {classification['action']}")
     print()
-    print(f"  Dimension scores (weight → score):")
+    print("  Dimension scores (weight → score):")
     for dim, w in weights.items():
         val = float(current[dim])
         print(f"    {dim:<18} {w:.0%} → {val:.1f}")
